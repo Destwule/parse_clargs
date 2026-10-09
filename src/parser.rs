@@ -50,9 +50,32 @@ impl Parser {
         self
     }
 
+    fn parse_value(arg: &Arg, value: &str, name: &str) -> Result<Value, String> {
+        let error_text: String = format!("Error parsing '{name}'");
+        let return_value: Value;
+        // NOTE: ValueKind::UNSPECIFIED wont run because the register()
+        // function check that an argument cannot be unspecified
+        match arg.get_value_kind() {
+            ValueKind::Bool => {
+                return_value = Value::Bool(value.parse::<bool>()
+                    .map_err(|err| format!("{error_text}: {err}"))?);
+            }
+            ValueKind::Str => {
+                return_value = Value::Str(value.to_string());
+            }
+            ValueKind::Num => {
+                return_value = Value::Num(value.parse::<u64>()
+                    .map_err(|err| format!("{error_text}: {err}"))?);
+            }
+            _ => return Err("'value kind' is not part of the supported types".to_string())
+        }
+
+        Ok(return_value)
+    }
+
+
     fn value_of_arg(arg: &Arg, cli_args: &[String], name: &str, index: usize) -> Result<Value, String> {
         let return_value: Value;
-        let error_text: String = format!("Error parsing '{name}'");
 
         if arg.get_takes_value() {
             let token = cli_args.get(index + 1);
@@ -61,30 +84,13 @@ impl Parser {
                     if let Some(value) = arg.get_default_value().as_ref() {
                         return Ok(value.clone())
                     }
-                    
                     return Err(format!("no value specified for '{name}'"));
                 },
                 Some(value) => {
-                    if !value.starts_with("-") {
-                        // NOTE: ValueKind::UNSPECIFIED wont run because the register()
-                        // function check that an argument cannot be unspecified
-                        match arg.get_value_kind() {
-                            ValueKind::Bool => {
-                                return_value = Value::Bool(value.parse::<bool>()
-                                    .map_err(|err| format!("{error_text}: {err}"))?);
-                            }
-                            ValueKind::Str => {
-                                return_value = Value::Str(value.to_string());
-                            }
-                            ValueKind::Num => {
-                                return_value = Value::Num(value.parse::<u64>()
-                                    .map_err(|err| format!("{error_text}: {err}"))?);
-                            }
-                            _ => return Err("'value kind' is not part of the supported types".to_string())
-                        }
-                    } else {
+                    if value.starts_with("-") {
                         return Err(format!("no value specified for '{name}'"))
                     }
+                    return_value = Self::parse_value(arg, value, name)?;
                 }
             }
         } else {
@@ -103,14 +109,18 @@ impl Parser {
             self.display_help_text();
         }
 
-        let required_flags = self.args.iter().filter(|x| x.is_required()).collect::<Vec<&Arg>>();
-        
+        let required_flags = self.get_args().iter().filter(|x| x.is_required() && !x.is_positional()).collect::<Vec<&Arg>>();
+        let positional_args = self.get_args().iter().filter(|x| x.is_positional()).collect::<Vec<&Arg>>();
+        let mut next_positional = 0usize;
+
         while index < cli_args.len() {
             let peek = index + 1;
             let after_peek = index + 2;
             let arg_name = &cli_args[index];
 
-            let found = self.args.iter().find(|a| a.long_flag() == *arg_name || a.short_flag() == *arg_name);
+            let found = self.args.iter().find(|a| {
+                !a.is_positional() && (a.long_flag() == *arg_name || a.short_flag() == *arg_name)
+            });
             if let Some(arg) = found {
                 let name = if !arg.get_long_name().is_empty() {
                     arg.get_long_name()
@@ -125,8 +135,18 @@ impl Parser {
                 } else {
                     index = peek;
                 }
-            } else {
-                return Err(format!("Unknown argument '{arg_name}'"))
+            } else if arg_name.starts_with("-") && arg_name != "-" {
+                return Err(format!("Unknown argument '{arg_name}'"));
+            }
+            else {
+                // for positional arguments: comeback later and try to understand it
+                let def = positional_args
+                    .get(next_positional)
+                    .ok_or_else(|| format!("too many arguments: '{arg_name}'"))?;
+                let key = def.get_long_name();
+                matches.add(key, Self::parse_value(def, arg_name, key)?);
+                next_positional += 1;
+                index = peek;
             }
         }
 
@@ -141,6 +161,15 @@ impl Parser {
                     eprintln!("Try '{} --help' for more information", self.get_name());
                     std::process::exit(1);
                 }
+            }
+        }
+
+        // for positional arguments: comeback later and try to understand it
+        for def in &positional_args[next_positional..] {
+            if def.get_default_value().is_none() {
+                eprintln!("{}: missing {} operand", self.get_name(), def.get_long_name().to_uppercase());
+                eprintln!("Try '{} --help' for more information", self.get_name());
+                std::process::exit(1);
             }
         }
                 
@@ -175,19 +204,28 @@ impl Parser {
             }
         }
 
-        let required_flags = self.args.clone().into_iter().filter(|x| x.is_required()).collect::<Vec<Arg>>();
+        let required_flags = self.args.clone().into_iter().filter(|x| x.is_required() && !x.is_positional()).collect::<Vec<Arg>>();
+        
+        let positional_flags = self.args.clone().into_iter().filter(|x| x.is_positional()).collect::<Vec<Arg>>();
         
         let text = format!("Usage: {} [OPTIONS]", self.get_name());
         let mut help_text = String::from(text);
 
         if required_flags.len() > 0 { help_text.push_str("...") }
         
-        for flag in required_flags {
-            let name = if flag.long_flag().is_empty() {
-                flag.get_short_name()
-            } else { flag.get_long_name() };
+        for flag in &required_flags {
+            let name = if flag.get_long_name().is_empty() {
+                flag.short_flag()
+            } else { flag.long_flag() };
             help_text.push_str(format!(" [{}]", name).as_str());
         }
+
+        for flag in positional_flags {
+            let name = flag.get_long_name();
+            
+            help_text.push_str(format!(" {}", name.to_uppercase()).as_str());
+        }
+
         help_text.push_str(format!("\n{}\n", self.get_description()).as_str());
         if !self.get_description().is_empty() {
             help_text.push_str("\n");
@@ -205,21 +243,23 @@ impl Parser {
             let mut text = String::new();
             
             for arg in &self.args {
-                let arg_help_text = arg.get_help_text();
-                let long_name = arg.long_flag();
-                let short_name = if arg.long_flag().is_empty() {
-                    format!("{}", arg.short_flag())
-                } else {
-                    if arg.short_flag().is_empty() {
+                if !arg.is_positional() {
+                    let arg_help_text = arg.get_help_text();
+                    let long_name = arg.long_flag();
+                    let short_name = if arg.long_flag().is_empty() {
                         format!("{}", arg.short_flag())
-                    } else { format!("{},", arg.short_flag()) }
-                };
-
-                help_text_list.push(HelpText::new(short_name.clone(), long_name.clone(), arg_help_text.to_string()));
-
-                max_len_first = std::cmp::max(max_len_first, short_name.len());
-                max_len_middle = std::cmp::max(max_len_middle, long_name.len());
-                max_len_last = std::cmp::max(max_len_last, arg_help_text.len());
+                    } else {
+                        if arg.short_flag().is_empty() {
+                            format!("{}", arg.short_flag())
+                        } else { format!("{},", arg.short_flag()) }
+                    };
+    
+                    help_text_list.push(HelpText::new(short_name.clone(), long_name.clone(), arg_help_text.to_string()));
+    
+                    max_len_first = std::cmp::max(max_len_first, short_name.len());
+                    max_len_middle = std::cmp::max(max_len_middle, long_name.len());
+                    max_len_last = std::cmp::max(max_len_last, arg_help_text.len());
+                }
                 
                 text.clear();
             }

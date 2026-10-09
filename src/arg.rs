@@ -8,7 +8,8 @@ pub struct Arg {
     takes_value: bool,
     required: bool,
     value_kind: ValueKind,
-    default_value: Option<Value>
+    default_value: Option<Value>,
+    positional: bool
 }
 
 impl Arg {
@@ -20,7 +21,18 @@ impl Arg {
             takes_value: true,
             required: false,
             value_kind: ValueKind::UNSPECIFIED,
-            default_value: None
+            default_value: None,
+            positional: false
+        }
+    }
+
+    /// Positional arguments usually appear at the end of the
+    /// cli args list, so any positional arguments created will be
+    /// checked for at the end of the cli args
+    pub fn positional(long_name: &str) -> Self {
+        Self {
+            positional: true,
+            ..Self::new(long_name)
         }
     }
 
@@ -81,6 +93,7 @@ impl Arg {
     pub fn get_value_kind(&self) -> &ValueKind { &self.value_kind }
     pub fn get_help_text(&self) -> &String { &self.help_text }
     pub fn is_required(&self) -> bool { self.required }
+    pub fn is_positional(&self) -> bool { self.positional }
     pub fn get_default_value(&self) -> &Option<Value> { &self.default_value }
 
 
