@@ -34,13 +34,12 @@ impl Matches {
         }
     }
 
-    pub fn get_str(&self, key: &str) -> Option<String> {
+    pub fn get_str(&self, key: &str) -> Option<&str> {
         match self.values.get(key) {
-            Some(Value::Str(value)) => Some(value.to_string()),
+            Some(Value::Str(value)) => Some(value.as_str()),
             _ => None
         }
     }
-
 
     pub fn get_bool(&self, key: &str) -> Option<bool> {
         match self.values.get(key) {

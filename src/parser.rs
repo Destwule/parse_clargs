@@ -9,6 +9,7 @@ pub struct Parser {
     description: String,
     args: Vec<Arg>,
     args_index: usize,
+    help_on_empty: bool
 }
 
 impl Parser {
@@ -18,6 +19,7 @@ impl Parser {
             description: String::new(),
             args: vec![],
             args_index: 0,
+            help_on_empty: true
         };
 
         match Arg::new("help")
@@ -35,6 +37,7 @@ impl Parser {
     pub fn get_name(&self) -> &str { &self.name }
     pub fn get_description(&self) -> &str { &self.description }
     pub fn get_args(&self) -> &Vec<Arg> { &self.args }
+    pub fn get_help_on_empty(&self) -> bool { self.help_on_empty }
     
     pub fn add(mut self, arg: Arg) -> Result<Self, String> {
         let registered = arg.register()?;
@@ -46,6 +49,12 @@ impl Parser {
 
     pub fn description(mut self, description: &str) -> Self {
         self.description = description.to_string();
+
+        self
+    }
+
+    pub fn help_on_empty(mut self, value: bool) -> Self {
+        self.help_on_empty = value;
 
         self
     }
@@ -105,7 +114,7 @@ impl Parser {
         let mut matches = Matches::new();
         let mut index = 0;
         
-        if cli_args.is_empty() || cli_args.iter().find(|a| *a == "--help").is_some() {
+        if cli_args.iter().find(|a| *a == "--help").is_some() || (self.get_help_on_empty() && cli_args.is_empty()) {
             self.display_help_text();
         }
 
@@ -165,11 +174,13 @@ impl Parser {
         }
 
         // for positional arguments: comeback later and try to understand it
-        for def in &positional_args[next_positional..] {
-            if def.get_default_value().is_none() {
-                eprintln!("{}: missing {} operand", self.get_name(), def.get_long_name().to_uppercase());
-                eprintln!("Try '{} --help' for more information", self.get_name());
-                std::process::exit(1);
+        if self.get_help_on_empty() {
+            for def in &positional_args[next_positional..] {
+                if def.get_default_value().is_none() {
+                    eprintln!("{}: missing {} operand", self.get_name(), def.get_long_name().to_uppercase());
+                    eprintln!("Try '{} --help' for more information", self.get_name());
+                    std::process::exit(1);
+                }
             }
         }
                 
