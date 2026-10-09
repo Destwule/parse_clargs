@@ -52,7 +52,7 @@ impl Arg {
     }
 
     pub fn takes_value(mut self, value: bool) -> Self {
-        self.takes_value = bool;
+        self.takes_value = value;
         self
     }
 
