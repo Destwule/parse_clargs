@@ -51,8 +51,8 @@ impl Arg {
         self
     }
 
-    pub fn takes_value(mut self) -> Self {
-        self.takes_value = true;
+    pub fn takes_value(mut self, value: bool) -> Self {
+        self.takes_value = bool;
         self
     }
 
