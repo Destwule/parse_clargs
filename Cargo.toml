@@ -2,5 +2,11 @@
 name = "parse_clargs"
 version = "0.1.0"
 edition = "2024"
+description = "A small command-line argument parser with typed values and auto generated help text"
+readme = "README.md"
+keywords = ["cli", "arguments", "parser"]
+categories = ["command-line-interface"]
+repository
+license
 
 [dependencies]

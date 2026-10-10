@@ -111,7 +111,7 @@ impl Arg {
         }
 
         if self.get_long_name().is_empty() && self.get_short_name().is_empty() {
-            return Err("short_name and long_name cannot be empty".to_string());
+            return Err(format!("Both short_name and long_name cannot be empty for arg '{}'", self.get_name()));
         }
 
         if self.value_kind == ValueKind::UNSPECIFIED {
