@@ -22,13 +22,16 @@ impl Parser {
             help_on_empty: true
         };
 
-        match Arg::new("help")
+        match Arg::new("help").long("help")
             .help("display this help and exit")
             .value_kind(ValueKind::Bool)
             .register()
         {
             Ok(help_arg) => demo.args.insert(0, help_arg),
-            Err(err) => eprintln!("error adding help argument in 'new': {err}"),
+            Err(err) => {
+                eprintln!("error adding help argument in 'new': {err}");
+                std::process::exit(1);
+            }
         }
 
         demo
@@ -130,21 +133,20 @@ impl Parser {
             let found = self.args.iter().find(|a| {
                 !a.is_positional() && (a.long_flag() == *arg_name || a.short_flag() == *arg_name)
             });
+            
             if let Some(arg) = found {
-                let name = if !arg.get_long_name().is_empty() {
-                    arg.get_long_name()
-                } else { arg.get_short_name() };
                 matches.add(
-                    name,
+                    arg.get_name(),
                     Self::value_of_arg(&arg, &cli_args, arg_name, index)?
                 );
-                
+
                 if arg.get_takes_value() {
                     index = after_peek;
                 } else {
                     index = peek;
                 }
-            } else if arg_name.starts_with("-") && arg_name != "-" {
+            }
+            else if arg_name.starts_with("-") && arg_name != "-" {
                 return Err(format!("Unknown argument '{arg_name}'"));
             }
             else {
@@ -153,7 +155,7 @@ impl Parser {
                     .get(next_positional)
                     .ok_or_else(|| format!("too many arguments: '{arg_name}'"))?;
                 let key = def.get_long_name();
-                matches.add(key, Self::parse_value(def, arg_name, key)?);
+                matches.add(def.get_name(), Self::parse_value(def, arg_name, key)?);
                 next_positional += 1;
                 index = peek;
             }
@@ -187,12 +189,10 @@ impl Parser {
         // Fills in the Default values for those who were not specified but were not given a value
         for arg in self.get_args() {
             if let Some(default) = arg.get_default_value() {
-                let checking_value = if arg.get_long_name().is_empty() {
-                    arg.get_short_name()
-                } else { arg.get_long_name() };
+                let checking_value = arg.get_name();
 
                 if !matches.is_present(checking_value) {
-                    matches.add(checking_value, default.clone());
+                    matches.add(arg.get_name(), default.clone());
                 }
             }
             
