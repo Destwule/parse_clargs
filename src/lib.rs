@@ -4,6 +4,8 @@
 //!     let cli_args: Vec<String> = std::env::args().skip(1).collect();
 //!     let parser = Parser::new("My program")
 //!         .description("My description")
+//!         .help_on_empty(true)
+//!         .arg
 //!
 //!
 //!

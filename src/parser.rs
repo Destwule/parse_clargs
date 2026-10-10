@@ -135,7 +135,7 @@ impl Parser {
             });
             
             if let Some(arg) = found {
-                matches.arg(
+                matches.add(
                     arg.get_name(),
                     Self::value_of_arg(&arg, &cli_args, arg_name, index)?
                 );
@@ -155,7 +155,7 @@ impl Parser {
                     .get(next_positional)
                     .ok_or_else(|| format!("too many arguments: '{arg_name}'"))?;
                 let key = def.get_long_name();
-                matches.arg(def.get_name(), Self::parse_value(def, arg_name, key)?);
+                matches.add(def.get_name(), Self::parse_value(def, arg_name, key)?);
                 next_positional += 1;
                 index = peek;
             }
@@ -192,7 +192,7 @@ impl Parser {
                 let checking_value = arg.get_name();
 
                 if !matches.is_present(checking_value) {
-                    matches.arg(arg.get_name(), default.clone());
+                    matches.add(arg.get_name(), default.clone());
                 }
             }
             
