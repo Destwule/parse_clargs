@@ -1,3 +1,15 @@
+//! A small command-line argument parser with typed values and auto-generated help text.
+//!
+//! fn main() -> Result<(), String> {
+//!     let cli_args: Vec<String> = std::env::args().skip(1).collect();
+//!     let parser = Parser::new("My program")
+//!         .description("My description")
+//!
+//!
+//!
+//!
+//!
+
 mod value;
 mod arg;
 mod parser;
