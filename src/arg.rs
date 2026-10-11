@@ -101,10 +101,10 @@ impl Arg {
     pub fn get_default_value(&self) -> &Option<Value> { &self.default_value }
 
 
-    pub(crate) fn register(self) -> Result<Self, String> {
+    pub(crate) fn register(mut self) -> Result<Self, String> {
         let arg_name = if self.get_long_name().is_empty() {
-            self.get_short_name()
-        } else { self.get_long_name() };
+            self.get_short_name().clone()
+        } else { self.get_long_name().clone() };
 
         if self.get_name().is_empty() {
             return Err("name cannot be empty".to_string());
@@ -114,12 +114,12 @@ impl Arg {
             return Err(format!("Both short_name and long_name cannot be empty for arg '{}'", self.get_name()));
         }
 
-        if self.get_value_kind() == ValueKind::UNSPECIFIED {
+        if self.value_kind == ValueKind::UNSPECIFIED {
             return Err(format!("value_kind of '{arg_name}' cannot be 'unspecified'"));
         }
 
-        if self.get_value_kind() == ValueKind::Bool {
-            self.takes_value(false);
+        if *self.get_value_kind() == ValueKind::Bool {
+            self = self.takes_value(false);
         }
 
         match self.default_value {

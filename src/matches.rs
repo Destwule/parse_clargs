@@ -1,4 +1,7 @@
-/// The result of a successful ['Parser::parse'] call: the values the user
+use crate::value::Value;
+use std::collections::HashMap;
+
+/// The result of a successful ['Parser::parse'] call; the values the user
 /// gave, plus the defaults of anything they left out/
 ///
 /// Look a value up by the name you gave its ['Arg'], using the getter that
@@ -9,7 +12,7 @@
 /// ```
 /// use parse_clargs::{Arg, Parser, Value, ValueKind};
 ///
-/// fn main() -> Result<<(), String> {
+/// # fn main() -> Result<<(), String> {
 ///     let parser = Parser::new("demo")
 ///         .arg(Arg::name("name").long("name").value_kind(ValueKind::Str))?
 ///         .arg(Arg::name("count").long("count").value_kind(ValueKind::Num)
@@ -17,13 +20,15 @@
 ///         .arg(Arg::name("verbose").long("verbose").value_kind(ValueKind::Bool))?;
 /// 
 ///     let args = vec!["--name".to_string(), "Ada".to_string(), "--verbose".to_string()]
+///     let matches = parser.parse(&args)?;
 ///
-///
-///
-
-use crate::value::Value;
-use std::collections::HashMap;
-
+///     assert_eq!(matches.get_str("name"), Some("Ada"));
+///     assert_eq!(matches.get_num("count"), Some(1"));  // not given so the default
+///     assert!(matches.is_present("verbose"));
+///     assert_eq!(matches.get_num("name"), None);  // wwrong getter for string flag
+///     # Ok(())
+/// # }
+/// ```
 pub struct Matches {
     values: HashMap<String, Value>
 }
