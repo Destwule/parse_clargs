@@ -114,8 +114,12 @@ impl Arg {
             return Err(format!("Both short_name and long_name cannot be empty for arg '{}'", self.get_name()));
         }
 
-        if self.value_kind == ValueKind::UNSPECIFIED {
+        if self.get_value_kind() == ValueKind::UNSPECIFIED {
             return Err(format!("value_kind of '{arg_name}' cannot be 'unspecified'"));
+        }
+
+        if self.get_value_kind() == ValueKind::Bool {
+            self.takes_value(false);
         }
 
         match self.default_value {

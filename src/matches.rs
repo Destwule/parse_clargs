@@ -1,3 +1,25 @@
+/// The result of a successful ['Parser::parse'] call: the values the user
+/// gave, plus the defaults of anything they left out/
+///
+/// Look a value up by the name you gave its ['Arg'], using the getter that
+/// matches its ['ValueKind'].
+///
+/// # Example
+///
+/// ```
+/// use parse_clargs::{Arg, Parser, Value, ValueKind};
+///
+/// fn main() -> Result<<(), String> {
+///     let parser = Parser::new("demo")
+///         .arg(Arg::name("name").long("name").value_kind(ValueKind::Str))?
+///         .arg(Arg::name("count").long("count").value_kind(ValueKind::Num)
+///             .default_value(Value::Num(1))?
+///         .arg(Arg::name("verbose").long("verbose").value_kind(ValueKind::Bool))?;
+/// 
+///     let args = vec!["--name".to_string(), "Ada".to_string(), "--verbose".to_string()]
+///
+///
+///
 
 use crate::value::Value;
 use std::collections::HashMap;
