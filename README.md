@@ -5,5 +5,3 @@
 ## Get Started
 ```
 cargo add parse_clargs
-
-cargo doc --open
