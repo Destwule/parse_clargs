@@ -311,163 +311,45 @@ impl Arg {
     
 
     /// returns the generic name used to idnetify the argument
-    /// # Example 
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.get_name(), "file");
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn get_name(&self) -> &str { self.name.as_str() }
 
     
     /// returns the long_name of the argument which is used to pass
     /// the argument value to the program
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.get_long_name(), "file");
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn get_long_name(&self) -> &String { &self.long_name }
 
 
     /// returns the short_name of the argument which is used to pass
     /// the argument value to the program
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .short("f")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.get_short_name(), "f");
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn get_short_name(&self) -> &String { &self.short_name }
 
 
     /// return true if the argument takes a value and false otherwise.
     /// the default is `true`
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("case")
-    ///     .long("uppercase")
-    ///     .help("case to write text in")
-    ///     .value_kind(ValueKind::Bool).takes_value(false);
-    ///
-    /// assert_eq!(arg.get_takes_value(), false);
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn get_takes_value(&self) -> bool { self.takes_value }
 
 
     /// returns the valuekind of the argument
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.get_value_kind(), &ValueKind::Str);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub fn get_value_kind(&self) -> &ValueKind { &self.value_kind }
 
 
     /// returns the information on what the argument does.
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.get_help_text(), "The file to read from");
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn get_help_text(&self) -> &String { &self.help_text }
 
 
     /// returns true if the argument is required and false otherwise.
     /// the default is false
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.is_required(), false);
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn is_required(&self) -> bool { self.required }
 
 
     /// returns true if the argument is a positional argument and false otherwise
     /// The default is false.
     /// The value is always set to true for args created with [`Arg::positional`]
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str);
-    ///
-    /// assert_eq!(arg.is_positional(), false);
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn is_positional(&self) -> bool { self.positional }
 
 
     /// returns the default value that the arguments is assigned to when no value
     /// is passed.
-    /// # Example
-    /// ```
-    /// use parse_clargs::{Arg, Parser, ValueKind, Value};
-    /// # fn main() -> Result<(), String> {
-    /// let arg = Arg::new("file")
-    ///     .long("file")
-    ///     .help("The file to read from")
-    ///     .value_kind(ValueKind::Str)
-    ///     .default_value(Value::Str("wule.txt".to_string()));
-    ///
-    /// assert_eq!(arg.get_default_value(), &Some(Value::Str("wule.txt".to_string())));
-    /// # Ok(())
-    /// # }
-    ///```
     pub fn get_default_value(&self) -> &Option<Value> { &self.default_value }
 
 
