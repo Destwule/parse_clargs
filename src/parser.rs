@@ -4,6 +4,45 @@ use crate::{
     matches::Matches
 };
 
+
+/// This is the interface that the program uses to define command line arguments that
+/// the program expects and accepts.
+///
+/// You create the parser with `Parser::new`; the param that `new` expects is usually the program name.
+/// then give the parser a description, basically what the program does. then you add arguments
+/// 
+/// Once all arguments are added then `Parser::parse` which takes a list of strings that represent arguments, 
+/// validates those arguments against the defined arguments and returns a `Matches` struct.
+/// The `Matches` struct contains all the matched arguments which you then use in your code
+///
+/// # Example
+/// ```
+/// # use parse_clargs::{Arg, Parser, Value, ValueKind};
+/// let arg_1 = Arg::new("name")
+///     .long("name")
+///     .help("name to include in greeting")
+///     .value_kind(ValueKind::Str);
+///
+///  let arg_2 = Arg::new("uppercase")
+///     .long("uppercase").short("u")
+///     .help("prints greeting in uppercase")
+///     .value_kind(ValueKind::Bool);
+///
+/// let arg_3 = Arg::positional("age")
+///     .help("persons age in numbers")
+///     .value_kind(ValueKind::Num);
+/// 
+/// let args = vec!["--name".to_string(), "Ada".to_string(), "-u".to_string(), "40".to_string()];
+///
+/// let parser = Parser::new("greeter")
+///     .description("prints a greeting message")
+///     .arg(arg_1)?
+///     .arg(arg_2)?
+///     .arg(arg_3)?;
+///
+/// let matches = parser.parse(&args)?;
+/// # Ok::<(), String>(())
+/// ```
 pub struct Parser {
     name: String,
     description: String,
@@ -13,6 +52,15 @@ pub struct Parser {
 }
 
 impl Parser {
+    /// Creates a new parser. `name` is usually the program's name and appears in the
+    /// usage line of the help text. A `--help` argument is registered automatically.
+    ///
+    /// # Example
+    /// ```
+    /// # use parse_clargs::Parser;
+    /// let parser = Parser::new("greeter");
+    /// assert_eq!(parser.get_name(), "greeter");
+    /// ```
     pub fn new(name: &str) -> Self {
         let mut demo = Self {
             name: name.to_string(),
@@ -37,11 +85,36 @@ impl Parser {
         demo
     }
 
+    /// returns the name of the parser
     pub fn get_name(&self) -> &str { &self.name }
+
+    /// returns the description of the parser
     pub fn get_description(&self) -> &str { &self.description }
+
+    /// returns the list of all args that the parser expects, including the automatic `--help`
     pub fn get_args(&self) -> &Vec<Arg> { &self.args }
+
+    /// this returns a boolean value to represent whether the help text is to be
+    /// printed when there are no cli arguments passed to the program
     pub fn get_help_on_empty(&self) -> bool { self.help_on_empty }
 
+    /// This adds an argument to the parser. Returns an error if the argument is invalid, for
+    /// example  if it has not flags (and isn't positional), has no value kind, or has a
+    /// default value of the wrong type
+    /// # Example
+    /// ```
+    /// # use parse_clargs::{Arg, Parser, Value, ValueKind};
+    /// Parser::new("My program")
+    ///     .arg(Arg::new("name")
+    ///         .long("name").help("the name of some random person")
+    ///         .value_kind(ValueKind::Str)
+    ///     )?
+    ///     .arg(Arg::new("uppercase")
+    ///         .long("uppercase").help("whether to print in uppercase")
+    ///         .value_kind(ValueKind::Bool)
+    ///     )?;
+    /// # Ok::<(), String>(())
+    /// ```
     pub fn arg(mut self, arg: Arg) -> Result<Self, String> {
         let registered = arg.register()?;
         self.args.insert(self.args_index, registered);
@@ -50,12 +123,26 @@ impl Parser {
         Ok(self)
     }
 
+    /// used to set the description message that briefly describes what the
+    /// program does
     pub fn description(mut self, description: &str) -> Self {
         self.description = description.to_string();
 
         self
     }
 
+    /// chooses what happens when the program is run with no arguments.
+    ///
+    /// When `true` (the default), the help text is printed and the program quits.
+    /// Set it to `false` for programs that do something sensible without arguments,
+    /// such as hex viewer that reads from stdin.
+    ///
+    /// # Example
+    /// ```
+    /// # use parse_clargs::Parser;
+    /// let parser = Parser::new("hexview").help_on_empty(false);
+    /// assert!(!parser.get_help_on_empty());
+    /// ```
     pub fn help_on_empty(mut self, value: bool) -> Self {
         self.help_on_empty = value;
 
@@ -111,6 +198,46 @@ impl Parser {
         Ok(return_value)
     }
 
+    /// Checks the user's arguments against the ones you defined. Returns the values
+    /// as a [`Matches`], or an error message, for example for an unknown flag or a
+    /// value that isn't a valid number.
+    ///
+    /// Pass only the arguments, not the program name. With `std::env::args()`, skip
+    /// the first item:
+    ///
+    /// ```no_run
+    /// # use parse_clargs::Parser;
+    /// let args: Vec<String> = std::env::args().skip(1).collect();
+    /// let result = Parser::new("myprog").parse(&args);
+    /// ```
+    ///
+    /// `--help` anywhere in the arguments prints the help text and exits the program.
+    /// So does an empty list, unless [`Parser::help_on_empty`] is set to `false`.
+    /// A missing required argument also prints an error and exits.
+    ///
+    /// # Example
+    /// ```
+    /// # use parse_clargs::{Arg, Parser, ValueKind};
+    /// let parser = Parser::new("greeter")
+    ///     .arg(Arg::new("name")
+    ///         .long("name")
+    ///         .help("name to greet")
+    ///         .value_kind(ValueKind::Str))?
+    ///     .arg(Arg::new("uppercase")
+    ///         .long("uppercase").short("u")
+    ///         .help("print the greeting in uppercase")
+    ///         .value_kind(ValueKind::Bool))?;
+    ///
+    /// let args = vec!["--name".to_string(), "Ada".to_string(), "-u".to_string()];
+    /// let matches = parser.parse(&args)?;
+    ///
+    /// assert_eq!(matches.get_str("name"), Some("Ada"));
+    /// assert!(matches.is_present("uppercase"));
+    ///
+    /// // a flag that was never defined is an error, not a panic
+    /// assert!(parser.parse(&["--nope".to_string()]).is_err());
+    /// # Ok::<(), String>(())
+    /// ```
     pub fn parse(&self, cli_args: &[String]) -> Result<Matches, String> {
         let mut matches = Matches::new();
         let mut index = 0;
@@ -205,6 +332,7 @@ impl Parser {
         Ok(matches)
     }
 
+    /// generates and returns the help text of the parser from the arguments passed
     pub fn generate_help_text(&self) -> String {
         struct HelpText {
             first_part: String,
@@ -304,6 +432,7 @@ impl Parser {
         help_text
     }
 
+    /// prints the help text to stdout and exits with status 0
     pub fn display_help_text(&self) {
         println!("{}", self.generate_help_text());
         std::process::exit(0);
