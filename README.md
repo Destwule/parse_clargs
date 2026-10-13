@@ -13,4 +13,4 @@ Full documentation is on [docs.rs](https://docs.rs/parse_clargs).
 
 ## License
 
-Licensed under either of MIT or Apache-2.0, at your option.
+Licensed under MIT
