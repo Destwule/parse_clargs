@@ -309,3 +309,72 @@ impl Parser {
         std::process::exit(0);
     }
 }
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // turns &["a", "b"] into Vec<String>, so tests stay short
+    fn args(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn parser() -> Parser {
+        Parser::new("test")
+            .arg(Arg::new("count").long("count").short("c").value_kind(ValueKind::Num)).unwrap()
+            .arg(Arg::positional("file").value_kind(ValueKind::Str)).unwrap()
+    }
+
+    #[test]
+    fn long_and_short_flags_give_the_same_result() {
+        let long = parser().parse(&args(&["--count", "8"])).unwrap();
+        let short = parser().parse(&args(&["-c", "8"])).unwrap();
+        assert_eq!(long.get_num("count"), Some(8));
+        assert_eq!(short.get_num("count"), Some(8));
+    }
+
+    #[test]
+    fn positional_works_before_or_after_a_flag() {
+        let before = parser().parse(&args(&["file.bin", "-c", "8"])).unwrap();
+        let after = parser().parse(&args(&["-c", "8", "file.bin"])).unwrap();
+        for m in [before, after] {
+            assert_eq!(m.get_str("file"), Some("file.bin"));
+            assert_eq!(m.get_num("count"), Some(8));
+        }
+    }
+
+    #[test]
+    fn optional_positional_can_be_missing() {
+        let m = parser().parse(&args(&["-c", "8"])).unwrap();
+        assert_eq!(m.get_str("file"), None);
+    }
+
+    #[test]
+    fn too_many_positionals_is_an_error() {
+        assert!(parser().parse(&args(&["a.bin", "b.bin"])).is_err());
+    }
+
+    #[test]
+    fn unknown_flag_is_an_error() {
+        assert!(parser().parse(&args(&["--nope"])).is_err());
+    }
+
+    #[test]
+    fn bad_number_is_an_error() {
+        assert!(parser().parse(&args(&["--count", "abc"])).is_err());
+    }
+
+    #[test]
+    fn default_value_fills_in_when_flag_is_absent() {
+        let p = Parser::new("test")
+            .help_on_empty(false)
+            .arg(Arg::new("cols").long("cols")
+                .value_kind(ValueKind::Num)
+                .default_value(Value::Num(16))).unwrap();
+        let m = p.parse(&args(&[])).unwrap();
+        assert_eq!(m.get_num("cols"), Some(16));
+    }
+}

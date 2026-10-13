@@ -401,3 +401,78 @@ impl Arg {
         Ok(self)
     }
 }
+
+
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn long_flag_adds_two_hyphens() {
+        let arg = Arg::new("file").long("file").value_kind(ValueKind::Str);
+        assert_eq!(arg.long_flag(), "--file");
+    }
+
+    #[test]
+    fn flags_are_empty_when_not_set() {
+        let arg = Arg::new("file").value_kind(ValueKind::Str);
+        assert_eq!(arg.long_flag(), "");
+        assert_eq!(arg.short_flag(), "");
+    }
+
+    #[test]
+    fn short_flag_adds_one_hyphen() {
+        let arg = Arg::new("file").short("f").value_kind(ValueKind::Str);
+        assert_eq!(arg.short_flag(), "-f");
+    }
+
+    #[test]
+    fn register_accepts_a_valid_arg() {
+        let result = Arg::new("file").long("file").value_kind(ValueKind::Str).register();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn register_rejects_an_empty_name() {
+        let result = Arg::new("").long("file").value_kind(ValueKind::Str).register();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn register_rejects_an_arg_with_no_flags() {
+        let result = Arg::new("file").value_kind(ValueKind::Str).register();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn positional_does_not_need_flags() {
+        let result = Arg::positional("file").value_kind(ValueKind::Str).register();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn register_rejects_unspecified_value_kind() {
+        let result = Arg::new("file").long("file").register();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn bool_args_do_not_take_a_value() {
+        let arg = Arg::new("verbose").long("verbose")
+            .value_kind(ValueKind::Bool)
+            .register()
+            .unwrap();
+        assert!(!arg.get_takes_value());
+    }
+
+    #[test]
+    fn register_rejects_a_default_of_the_wrong_type() {
+        let result = Arg::new("file").long("file")
+            .value_kind(ValueKind::Str)
+            .default_value(Value::Num(5))
+            .register();
+        assert!(result.is_err());
+    }
+}

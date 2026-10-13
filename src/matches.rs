@@ -102,3 +102,33 @@ impl Matches {
         }
     }
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stored_value_can_be_read_back() {
+        let mut m = Matches::new();
+        m.add("count", Value::Num(8));
+        assert!(m.is_present("count"));
+        assert_eq!(m.get_num("count"), Some(8));
+    }
+
+    #[test]
+    fn missing_key_gives_none() {
+        let m = Matches::new();
+        assert!(!m.is_present("count"));
+        assert_eq!(m.get_num("count"), None);
+    }
+
+    #[test]
+    fn wrong_type_gives_none() {
+        let mut m = Matches::new();
+        m.add("name", Value::Str("ada".to_string()));
+        assert_eq!(m.get_num("name"), None);
+        assert_eq!(m.get_str("name"), Some("ada"));
+    }
+}
