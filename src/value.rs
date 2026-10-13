@@ -28,7 +28,7 @@
 pub enum Value {
     Str(String),
     Num(u64),
-    Bool(bool)
+    Bool(bool),
 }
 
 /// The type of value an argument expects. The parser uses it to convert what the
@@ -57,5 +57,5 @@ pub enum ValueKind {
     Str,
     Num,
     Bool,
-    UNSPECIFIED
+    UNSPECIFIED,
 }

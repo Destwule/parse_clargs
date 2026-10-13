@@ -51,7 +51,7 @@ pub struct Arg {
     required: bool,
     value_kind: ValueKind,
     default_value: Option<Value>,
-    positional: bool
+    positional: bool,
 }
 
 impl Arg {
@@ -93,7 +93,7 @@ impl Arg {
             required: false,
             value_kind: ValueKind::UNSPECIFIED,
             default_value: None,
-            positional: false
+            positional: false,
         }
     }
 
@@ -224,7 +224,7 @@ impl Arg {
         self.required = true;
         self
     }
-    
+
     /// specifies what kind of value the argument expects to represent.
     /// The value_kind is used by the corresponding get method of the `Matches`
     /// struct to parse the argument value to its correct type
@@ -243,9 +243,9 @@ impl Arg {
         self.value_kind = value;
         self
     }
-    
+
     /// this is used to set the default value of the argument if no value is passed
-    /// # Example 
+    /// # Example
     /// ```
     /// use parse_clargs::{Arg, Parser, ValueKind, Value};
     /// # fn main() -> Result<(), String> {
@@ -261,10 +261,10 @@ impl Arg {
         self.default_value = Some(value);
         self
     }
-    
+
     /// this defines how the long name of the argument is expected to be passed through
     /// the cli.  This just appends two hyphens to the long_name
-    /// # Example 
+    /// # Example
     /// ```
     /// use parse_clargs::{Arg, Parser, ValueKind};
     /// # fn main() -> Result<(), String> {
@@ -281,10 +281,9 @@ impl Arg {
         if !self.get_long_name().is_empty() {
             return format!("--{}", self.get_long_name());
         }
-        
+
         String::new()
     }
-    
 
     /// this defines how the short name of the argument is expected to be passed through
     /// the cli.  This just appends one hyphen to the short_name
@@ -305,53 +304,61 @@ impl Arg {
         if !self.get_short_name().is_empty() {
             return format!("-{}", self.get_short_name());
         }
-        
+
         String::new()
     }
-    
 
     /// returns the generic name used to idnetify the argument
-    pub fn get_name(&self) -> &str { self.name.as_str() }
+    pub fn get_name(&self) -> &str {
+        self.name.as_str()
+    }
 
-    
     /// returns the long_name of the argument which is used to pass
     /// the argument value to the program
-    pub fn get_long_name(&self) -> &String { &self.long_name }
-
+    pub fn get_long_name(&self) -> &String {
+        &self.long_name
+    }
 
     /// returns the short_name of the argument which is used to pass
     /// the argument value to the program
-    pub fn get_short_name(&self) -> &String { &self.short_name }
-
+    pub fn get_short_name(&self) -> &String {
+        &self.short_name
+    }
 
     /// return true if the argument takes a value and false otherwise.
     /// the default is `true`
-    pub fn get_takes_value(&self) -> bool { self.takes_value }
-
+    pub fn get_takes_value(&self) -> bool {
+        self.takes_value
+    }
 
     /// returns the valuekind of the argument
-    pub fn get_value_kind(&self) -> &ValueKind { &self.value_kind }
-
+    pub fn get_value_kind(&self) -> &ValueKind {
+        &self.value_kind
+    }
 
     /// returns the information on what the argument does.
-    pub fn get_help_text(&self) -> &String { &self.help_text }
-
+    pub fn get_help_text(&self) -> &String {
+        &self.help_text
+    }
 
     /// returns true if the argument is required and false otherwise.
     /// the default is false
-    pub fn is_required(&self) -> bool { self.required }
-
+    pub fn is_required(&self) -> bool {
+        self.required
+    }
 
     /// returns true if the argument is a positional argument and false otherwise
     /// The default is false.
     /// The value is always set to true for args created with [`Arg::positional`]
-    pub fn is_positional(&self) -> bool { self.positional }
-
+    pub fn is_positional(&self) -> bool {
+        self.positional
+    }
 
     /// returns the default value that the arguments is assigned to when no value
     /// is passed.
-    pub fn get_default_value(&self) -> &Option<Value> { &self.default_value }
-
+    pub fn get_default_value(&self) -> &Option<Value> {
+        &self.default_value
+    }
 
     /// This valideates that the argument is properly defined.
     /// Usually called by [`Parser::arg`]
@@ -359,21 +366,33 @@ impl Arg {
     pub(crate) fn register(mut self) -> Result<Self, String> {
         let arg_name = if self.get_long_name().is_empty() {
             self.get_short_name().clone()
-        } else { self.get_long_name().clone() };
+        } else {
+            self.get_long_name().clone()
+        };
 
         if self.get_name().is_empty() {
             return Err("name cannot be empty".to_string());
         }
 
-        if !self.is_positional() && (self.get_long_name().is_empty() && self.get_short_name().is_empty()) {
-            return Err(format!("Both short_name and long_name cannot be empty for arg '{}'", self.get_name()));
+        if !self.is_positional()
+            && (self.get_long_name().is_empty() && self.get_short_name().is_empty())
+        {
+            return Err(format!(
+                "Both short_name and long_name cannot be empty for arg '{}'",
+                self.get_name()
+            ));
         }
 
         if self.value_kind == ValueKind::UNSPECIFIED {
             if !self.is_positional() {
-                return Err(format!("value_kind of '{arg_name}' cannot be 'unspecified'"));
+                return Err(format!(
+                    "value_kind of '{arg_name}' cannot be 'unspecified'"
+                ));
             }
-            return Err(format!("value_kind of '{}' cannot be 'unspecified'", self.get_name()));
+            return Err(format!(
+                "value_kind of '{}' cannot be 'unspecified'",
+                self.get_name()
+            ));
         }
 
         if *self.get_value_kind() == ValueKind::Bool {
@@ -383,27 +402,30 @@ impl Arg {
         match self.default_value {
             Some(Value::Str(_)) => {
                 if self.value_kind != ValueKind::Str {
-                    return Err(format!("DefaultValue of '{arg_name}' must be the same type as value_kind"));
+                    return Err(format!(
+                        "DefaultValue of '{arg_name}' must be the same type as value_kind"
+                    ));
                 }
             }
             Some(Value::Num(_)) => {
                 if self.value_kind != ValueKind::Num {
-                    return Err(format!("DefaultValue of '{arg_name}' must be the same type as value_kind"));
+                    return Err(format!(
+                        "DefaultValue of '{arg_name}' must be the same type as value_kind"
+                    ));
                 }
             }
             Some(Value::Bool(_)) => {
                 if self.value_kind != ValueKind::Bool {
-                    return Err(format!("DefaultValue of '{arg_name}' must be the same type as value_kind"));
+                    return Err(format!(
+                        "DefaultValue of '{arg_name}' must be the same type as value_kind"
+                    ));
                 }
             }
-            None => ()
+            None => (),
         }
         Ok(self)
     }
 }
-
-
-
 
 #[cfg(test)]
 mod test {
@@ -430,13 +452,19 @@ mod test {
 
     #[test]
     fn register_accepts_a_valid_arg() {
-        let result = Arg::new("file").long("file").value_kind(ValueKind::Str).register();
+        let result = Arg::new("file")
+            .long("file")
+            .value_kind(ValueKind::Str)
+            .register();
         assert!(result.is_ok());
     }
 
     #[test]
     fn register_rejects_an_empty_name() {
-        let result = Arg::new("").long("file").value_kind(ValueKind::Str).register();
+        let result = Arg::new("")
+            .long("file")
+            .value_kind(ValueKind::Str)
+            .register();
         assert!(result.is_err());
     }
 
@@ -448,7 +476,9 @@ mod test {
 
     #[test]
     fn positional_does_not_need_flags() {
-        let result = Arg::positional("file").value_kind(ValueKind::Str).register();
+        let result = Arg::positional("file")
+            .value_kind(ValueKind::Str)
+            .register();
         assert!(result.is_ok());
     }
 
@@ -460,7 +490,8 @@ mod test {
 
     #[test]
     fn bool_args_do_not_take_a_value() {
-        let arg = Arg::new("verbose").long("verbose")
+        let arg = Arg::new("verbose")
+            .long("verbose")
             .value_kind(ValueKind::Bool)
             .register()
             .unwrap();
@@ -469,7 +500,8 @@ mod test {
 
     #[test]
     fn register_rejects_a_default_of_the_wrong_type() {
-        let result = Arg::new("file").long("file")
+        let result = Arg::new("file")
+            .long("file")
             .value_kind(ValueKind::Str)
             .default_value(Value::Num(5))
             .register();

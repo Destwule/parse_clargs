@@ -1,17 +1,16 @@
 use crate::{
-    value::{Value, ValueKind},
     arg::Arg,
-    matches::Matches
+    matches::Matches,
+    value::{Value, ValueKind},
 };
-
 
 /// This is the interface that the program uses to define command line arguments that
 /// the program expects and accepts.
 ///
 /// You create the parser with `Parser::new`; the param that `new` expects is usually the program name.
 /// then give the parser a description, basically what the program does. then you add arguments
-/// 
-/// Once all arguments are added then `Parser::parse` which takes a list of strings that represent arguments, 
+///
+/// Once all arguments are added then `Parser::parse` which takes a list of strings that represent arguments,
 /// validates those arguments against the defined arguments and returns a `Matches` struct.
 /// The `Matches` struct contains all the matched arguments which you then use in your code
 ///
@@ -31,7 +30,7 @@ use crate::{
 /// let arg_3 = Arg::positional("age")
 ///     .help("persons age in numbers")
 ///     .value_kind(ValueKind::Num);
-/// 
+///
 /// let args = vec!["--name".to_string(), "Ada".to_string(), "-u".to_string(), "40".to_string()];
 ///
 /// let parser = Parser::new("greeter")
@@ -48,7 +47,7 @@ pub struct Parser {
     description: String,
     args: Vec<Arg>,
     args_index: usize,
-    help_on_empty: bool
+    help_on_empty: bool,
 }
 
 impl Parser {
@@ -67,10 +66,11 @@ impl Parser {
             description: String::new(),
             args: vec![],
             args_index: 0,
-            help_on_empty: true
+            help_on_empty: true,
         };
 
-        match Arg::new("help").long("help")
+        match Arg::new("help")
+            .long("help")
             .help("display this help and exit")
             .value_kind(ValueKind::Bool)
             .register()
@@ -86,17 +86,25 @@ impl Parser {
     }
 
     /// returns the name of the parser
-    pub fn get_name(&self) -> &str { &self.name }
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
 
     /// returns the description of the parser
-    pub fn get_description(&self) -> &str { &self.description }
+    pub fn get_description(&self) -> &str {
+        &self.description
+    }
 
     /// returns the list of all args that the parser expects, including the automatic `--help`
-    pub fn get_args(&self) -> &Vec<Arg> { &self.args }
+    pub fn get_args(&self) -> &Vec<Arg> {
+        &self.args
+    }
 
     /// this returns a boolean value to represent whether the help text is to be
     /// printed when there are no cli arguments passed to the program
-    pub fn get_help_on_empty(&self) -> bool { self.help_on_empty }
+    pub fn get_help_on_empty(&self) -> bool {
+        self.help_on_empty
+    }
 
     /// This adds an argument to the parser. Returns an error if the argument is invalid, for
     /// example  if it has not flags (and isn't positional), has no value kind, or has a
@@ -156,23 +164,34 @@ impl Parser {
         // function check that an argument cannot be unspecified
         match arg.get_value_kind() {
             ValueKind::Bool => {
-                return_value = Value::Bool(value.parse::<bool>()
-                    .map_err(|err| format!("{error_text}: {err}"))?);
+                return_value = Value::Bool(
+                    value
+                        .parse::<bool>()
+                        .map_err(|err| format!("{error_text}: {err}"))?,
+                );
             }
             ValueKind::Str => {
                 return_value = Value::Str(value.to_string());
             }
             ValueKind::Num => {
-                return_value = Value::Num(value.parse::<u64>()
-                    .map_err(|err| format!("{error_text}: {err}"))?);
+                return_value = Value::Num(
+                    value
+                        .parse::<u64>()
+                        .map_err(|err| format!("{error_text}: {err}"))?,
+                );
             }
-            _ => return Err("'value kind' is not part of the supported types".to_string())
+            _ => return Err("'value kind' is not part of the supported types".to_string()),
         }
 
         Ok(return_value)
     }
 
-    fn value_of_arg(arg: &Arg, cli_args: &[String], name: &str, index: usize) -> Result<Value, String> {
+    fn value_of_arg(
+        arg: &Arg,
+        cli_args: &[String],
+        name: &str,
+        index: usize,
+    ) -> Result<Value, String> {
         let return_value: Value;
 
         if arg.get_takes_value() {
@@ -180,13 +199,13 @@ impl Parser {
             match token {
                 None => {
                     if let Some(value) = arg.get_default_value().as_ref() {
-                        return Ok(value.clone())
+                        return Ok(value.clone());
                     }
                     return Err(format!("no value specified for '{name}'"));
-                },
+                }
                 Some(value) => {
                     if value.starts_with("-") {
-                        return Err(format!("no value specified for '{name}'"))
+                        return Err(format!("no value specified for '{name}'"));
                     }
                     return_value = Self::parse_value(arg, value, name)?;
                 }
@@ -248,10 +267,14 @@ impl Parser {
             self.display_help_text();
         }
 
-        let required_flags = self.get_args().iter()
+        let required_flags = self
+            .get_args()
+            .iter()
             .filter(|x| x.is_required() && !x.is_positional())
             .collect::<Vec<&Arg>>();
-        let positional_args = self.get_args().iter()
+        let positional_args = self
+            .get_args()
+            .iter()
             .filter(|x| x.is_positional())
             .collect::<Vec<&Arg>>();
         let mut next_positional = 0usize;
@@ -272,7 +295,7 @@ impl Parser {
             if let Some(arg) = found {
                 matches.add(
                     arg.get_name(),
-                    Self::value_of_arg(arg, cli_args, arg_name, index)?
+                    Self::value_of_arg(arg, cli_args, arg_name, index)?,
                 );
 
                 if arg.get_takes_value() {
@@ -280,17 +303,18 @@ impl Parser {
                 } else {
                     index = peek;
                 }
-            }
-            else if arg_name.starts_with("-") && arg_name != "-" {
+            } else if arg_name.starts_with("-") && arg_name != "-" {
                 return Err(format!("Unknown argument '{arg_name}'"));
-            }
-            else {
+            } else {
                 // anything that is not a flag (and was not eaten as a flag's value)
                 // is a positional; it goes to the next unfilled positional slot
                 let def = positional_args
                     .get(next_positional)
                     .ok_or_else(|| format!("too many arguments: '{arg_name}'"))?;
-                matches.add(def.get_name(), Self::parse_value(def, arg_name, def.get_name())?);
+                matches.add(
+                    def.get_name(),
+                    Self::parse_value(def, arg_name, def.get_name())?,
+                );
                 next_positional += 1;
                 index = peek;
             }
@@ -314,7 +338,11 @@ impl Parser {
         // and has no default value to fall back on
         for def in &positional_args[next_positional..] {
             if def.is_required() && def.get_default_value().is_none() {
-                eprintln!("{}: missing {} operand", self.get_name(), def.get_name().to_uppercase());
+                eprintln!(
+                    "{}: missing {} operand",
+                    self.get_name(),
+                    def.get_name().to_uppercase()
+                );
                 eprintln!("Try '{} --help' for more information", self.get_name());
                 std::process::exit(1);
             }
@@ -337,32 +365,46 @@ impl Parser {
         struct HelpText {
             first_part: String,
             middle_part: String,
-            last_part: String
+            last_part: String,
         }
 
         impl HelpText {
             fn new(first_part: String, middle_part: String, last_part: String) -> Self {
-                Self { first_part, last_part, middle_part }
+                Self {
+                    first_part,
+                    last_part,
+                    middle_part,
+                }
             }
         }
 
-        let required_flags = self.args.clone().into_iter()
+        let required_flags = self
+            .args
+            .clone()
+            .into_iter()
             .filter(|x| x.is_required() && !x.is_positional())
             .collect::<Vec<Arg>>();
 
-        let positional_flags = self.args.clone().into_iter()
+        let positional_flags = self
+            .args
+            .clone()
+            .into_iter()
             .filter(|x| x.is_positional())
             .collect::<Vec<Arg>>();
 
         let text = format!("Usage: {} [OPTIONS]", self.get_name());
         let mut help_text = String::from(text);
 
-        if required_flags.len() > 0 { help_text.push_str("...") }
+        if required_flags.len() > 0 {
+            help_text.push_str("...")
+        }
 
         for flag in &required_flags {
             let name = if flag.get_long_name().is_empty() {
                 flag.short_flag()
-            } else { flag.long_flag() };
+            } else {
+                flag.long_flag()
+            };
             help_text.push_str(format!(" [{}]", name).as_str());
         }
 
@@ -397,10 +439,16 @@ impl Parser {
                     } else {
                         if arg.short_flag().is_empty() {
                             format!("{}", arg.short_flag())
-                        } else { format!("{},", arg.short_flag()) }
+                        } else {
+                            format!("{},", arg.short_flag())
+                        }
                     };
 
-                    help_text_list.push(HelpText::new(short_name.clone(), long_name.clone(), arg_help_text.to_string()));
+                    help_text_list.push(HelpText::new(
+                        short_name.clone(),
+                        long_name.clone(),
+                        arg_help_text.to_string(),
+                    ));
 
                     max_len_first = std::cmp::max(max_len_first, short_name.len());
                     max_len_middle = std::cmp::max(max_len_middle, long_name.len());
@@ -410,15 +458,22 @@ impl Parser {
 
             for item in help_text_list {
                 help_text.push_str(
-                    format!("  {:<max_len_first$} {:<max_len_middle$}  {:<max_len_last$}\n",
-                    item.first_part, item.middle_part, item.last_part).as_str()
+                    format!(
+                        "  {:<max_len_first$} {:<max_len_middle$}  {:<max_len_last$}\n",
+                        item.first_part, item.middle_part, item.last_part
+                    )
+                    .as_str(),
                 );
             }
 
             // POSITIONAL ARGUMENTS SECTION
             if !positional_flags.is_empty() {
                 help_text.push_str("\nPOSITIONAL:\n");
-                let width = positional_flags.iter().map(|a| a.get_name().len()).max().unwrap_or(0);
+                let width = positional_flags
+                    .iter()
+                    .map(|a| a.get_name().len())
+                    .max()
+                    .unwrap_or(0);
 
                 for arg in &positional_flags {
                     help_text.push_str(&format!(
@@ -439,9 +494,6 @@ impl Parser {
     }
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -453,8 +505,15 @@ mod tests {
 
     fn parser() -> Parser {
         Parser::new("test")
-            .arg(Arg::new("count").long("count").short("c").value_kind(ValueKind::Num)).unwrap()
-            .arg(Arg::positional("file").value_kind(ValueKind::Str)).unwrap()
+            .arg(
+                Arg::new("count")
+                    .long("count")
+                    .short("c")
+                    .value_kind(ValueKind::Num),
+            )
+            .unwrap()
+            .arg(Arg::positional("file").value_kind(ValueKind::Str))
+            .unwrap()
     }
 
     #[test]
@@ -500,9 +559,13 @@ mod tests {
     fn default_value_fills_in_when_flag_is_absent() {
         let p = Parser::new("test")
             .help_on_empty(false)
-            .arg(Arg::new("cols").long("cols")
-                .value_kind(ValueKind::Num)
-                .default_value(Value::Num(16))).unwrap();
+            .arg(
+                Arg::new("cols")
+                    .long("cols")
+                    .value_kind(ValueKind::Num)
+                    .default_value(Value::Num(16)),
+            )
+            .unwrap();
         let m = p.parse(&args(&[])).unwrap();
         assert_eq!(m.get_num("cols"), Some(16));
     }

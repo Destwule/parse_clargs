@@ -22,12 +22,12 @@
 //!  }
 //! ```
 
-mod value;
 mod arg;
-mod parser;
 mod matches;
+mod parser;
+mod value;
 
-pub use value::{Value, ValueKind};
 pub use arg::Arg;
-pub use parser::Parser;
 pub use matches::Matches;
+pub use parser::Parser;
+pub use value::{Value, ValueKind};

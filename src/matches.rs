@@ -18,7 +18,7 @@ use std::collections::HashMap;
 ///         .arg(Arg::new("count").long("count").value_kind(ValueKind::Num)
 ///             .default_value(Value::Num(1)))?
 ///         .arg(Arg::new("verbose").long("verbose").value_kind(ValueKind::Bool))?;
-/// 
+///
 ///     let args = vec!["--name".to_string(), "Ada".to_string(), "--verbose".to_string()];
 ///     let matches = parser.parse(&args)?;
 ///
@@ -30,7 +30,7 @@ use std::collections::HashMap;
 /// # }
 /// ```
 pub struct Matches {
-    values: HashMap<String, Value>
+    values: HashMap<String, Value>,
 }
 
 impl Matches {
@@ -38,15 +38,17 @@ impl Matches {
     /// # Example
     /// ```
     /// use parse_clargs::Matches;
-    /// 
+    ///
     /// let matches = Matches::new();
     /// ```
     pub fn new() -> Self {
-        Self { values: HashMap::new() }
+        Self {
+            values: HashMap::new(),
+        }
     }
 
     /// Return the value stored under `name`.
-    /// 
+    ///
     /// Returns `None` if the argument is not given and has no default,
     pub fn get(&self, name: &str) -> Option<&Value> {
         self.values.get(name)
@@ -70,40 +72,38 @@ impl Matches {
     }
 
     /// Return the number stored under `key`
-    /// 
+    ///
     /// Return `None` if the argument wasn't given and has no default, or if
     /// it is not a number argument
     pub fn get_num(&self, key: &str) -> Option<u64> {
         match self.values.get(key) {
             Some(Value::Num(value)) => Some(*value),
-            _ => None
+            _ => None,
         }
     }
 
     /// Return the string stored under `key`
-    /// 
+    ///
     /// Return `None` if the argument wasn't given and has no default, or if
     /// it is not a string argument
     pub fn get_str(&self, key: &str) -> Option<&str> {
         match self.values.get(key) {
             Some(Value::Str(value)) => Some(value.as_str()),
-            _ => None
+            _ => None,
         }
     }
 
     /// Return the bool stored under `key`
-    /// 
+    ///
     /// Return `None` if the argument wasn't given and has no default, or if
     /// it is not a bool argument
     pub fn get_bool(&self, key: &str) -> Option<bool> {
         match self.values.get(key) {
             Some(Value::Bool(value)) => Some(*value),
-            _ => None
+            _ => None,
         }
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
