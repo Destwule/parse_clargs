@@ -3,6 +3,7 @@ name = "parse_clargs"
 version = "0.1.0"
 edition = "2024"
 description = "A small command-line argument parser with typed values and auto-generated help text."
+license = "MIT"
 repository = "https://github.com/Destwule/parse_clargs"
 readme = "README.md"
 keywords = ["cli", "arguments", "parser", "command-line"]
